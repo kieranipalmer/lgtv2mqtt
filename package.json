@@ -35,7 +35,7 @@
   },
   "homepage": "https://github.com/hobbyquaker/lgtv2mqtt",
   "dependencies": {
-    "lgtv2": "^1.4.1",
+    "lgtv2": "^1.6.3",
     "mqtt": "^4.3.4",
     "wake_on_lan": "^1.0.0",
     "yalm": "^4.1.0",
