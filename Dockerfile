@@ -1,7 +1,9 @@
 FROM node:17
 
+WORKDIR /app
+
 COPY package*.json ./
 RUN npm install
 COPY . .
 
-CMD [ "node", "index.js" ,"-u ${TV_HOST}", "-t ${BROKER_URL}", "-U ${USERNAME}", "-P ${PASSWORD}"]
+CMD [ "/bin/sh", "-c" "node /app/index.js -u ${BROKER_URL} -t ${TV_HOST} -U ${USERNAME} -P ${PASSWORD}"]
