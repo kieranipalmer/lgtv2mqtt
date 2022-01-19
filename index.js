@@ -5,6 +5,7 @@ const Mqtt = require('mqtt');
 const Lgtv = require('lgtv2');
 const config = require('./config.js');
 const pkg = require('./package.json');
+const wol = require('wake_on_lan');
 
 let mqttConnected;
 let tvConnected;
@@ -15,7 +16,7 @@ log.setLevel(config.verbosity);
 log.info(pkg.name + ' ' + pkg.version + ' starting');
 log.info('mqtt trying to connect', config.url);
 
-const mqtt = Mqtt.connect(config.url, {will: {topic: config.name + '/connected', payload: '0', retain: true}});
+const mqtt = Mqtt.connect(config.url, {username: config.username, password: config.password, will: {topic: config.name + '/connected', payload: '0', retain: true}});
 
 const lgtv = new Lgtv({
     url: 'ws://' + config.tv + ':3000'
@@ -57,6 +58,9 @@ mqtt.on('message', (topic, payload) => {
     switch (parts[1]) {
         case 'set':
             switch (parts[2]) {
+                case 'wake':
+                    wol.wake(config.macaddr)
+                    break;
                 case 'toast':
                     lgtv.request('ssap://system.notifications/createToast', {message: String(payload)});
                     break;
@@ -77,7 +81,7 @@ mqtt.on('message', (topic, payload) => {
                     break;
 
                 case 'youtube':
-                    lgtv.request('ssap://system.launcher/launch', {id: 'youtube.leanback.v4', contentId: String(payload)});
+                    lgtv.request('ssap://system.launcher/launch', {id: 'youtube.leanback.v4', params: { contentTarget: String(payload)} });
                     break;
 
                 case 'move':
@@ -134,11 +138,11 @@ lgtv.on('connect', () => {
 
     lgtv.subscribe('ssap://audio/getVolume', (err, res) => {
         log.debug('audio/getVolume', err, res);
-        if (res.changed.indexOf('volume') !== -1) {
-            mqtt.publish(config.name + '/status/volume', String(res.volume), {retain: true});
-        }
-        if (res.changed.indexOf('muted') !== -1) {
-            mqtt.publish(config.name + '/status/mute', res.muted ? '1' : '0', {retain: true});
+
+        if(res.volumeStatus) {
+            const volumeStatus = res.volumeStatus
+            mqtt.publish(config.name + '/status/volume', String(volumeStatus.volume), {retain: true});
+            mqtt.publish(config.name + '/status/mute', volumeStatus.muted ? '1' : '0', {retain: true});
         }
     });
 
@@ -165,12 +169,11 @@ lgtv.on('connect', () => {
             }
         }
     });
-
-    /*
+    
     lgtv.subscribe('ssap://tv/getExternalInputList', function (err, res) {
         console.log('getExternalInputList', err, res);
     });
-    */
+    
 });
 
 lgtv.on('connecting', host => {
