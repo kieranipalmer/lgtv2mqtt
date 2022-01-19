@@ -6,4 +6,4 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 
-CMD [ "/bin/sh", "-c" "node /app/index.js -u ${BROKER_URL} -t ${TV_HOST} -U ${USERNAME} -P ${PASSWORD}"]
+CMD [ "sh", "-c", "node /app/index.js -u ${BROKER_URL} -t ${TV_HOST} -U ${USERNAME} -P ${PASSWORD}"] 
